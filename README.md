@@ -155,8 +155,8 @@ python -m scripts.run_full_analysis --company "유한양행" --year 2025 --model
 - `*_intangible_pbc.csv`: INT-02 관련 추가 PBC
 - `*_report.md`: INT-02 분석을 포함한 Markdown 보고서
 
-현재 INT-02는 별도 후처리 단계로 실행됩니다.
-기존 `_risk.csv`, `_pbc.csv`와의 완전한 통합은 후속 개선 과제입니다.
+통합 실행기(`run_full_analysis.py`)는 기본 분석 후 INT-02를 계산하고 기존 `_risk.csv`, `_pbc.csv`에 추가 검토 신호 및 PBC를 병합합니다.
+기존 규칙은 유지하며 재실행 시 INT-02 행이 중복되지 않도록 처리합니다.
 
 ### 분석상 유의사항
 
