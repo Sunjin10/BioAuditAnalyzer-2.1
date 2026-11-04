@@ -170,3 +170,5 @@ python -m scripts.run_full_analysis --company "유한양행" --year 2025 --model
 개선 과정을 정리했습니다.
 
 - [유한양행 2025년 재무분석 사례](docs/case_study_yuhan_2025.md)
+- [알테오젠 2025년 재무분석 사례](docs/case_study_alteogen_2025.md)
+- [대웅제약 2025년 재무분석 사례](docs/case_study_daewoong_2025.md)
