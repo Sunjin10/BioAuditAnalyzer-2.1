@@ -86,7 +86,7 @@ class TestBiotechPBC(unittest.TestCase):
             "재고증가율(%)": 65.0,
             "재고자산회전율(회)": 2.0,
             "전기재고자산회전율(회)": 2.0,
-            "무형자산비중(%)": 16.0
+            "무형자산·영업권비중(%)": 16.0
         }])
 
         risk = build_biotech_risk_report(

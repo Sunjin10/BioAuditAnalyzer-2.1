@@ -56,7 +56,7 @@ def build_biotech_risk_report(
         )
 
     # INT-01: 무형자산 비중 15% 이상
-    intangible_ratio = row.get("무형자산비중(%)")
+    intangible_ratio = row.get("무형자산·영업권비중(%)")
 
     if pd.notna(intangible_ratio) and intangible_ratio >= 15:
         add_signal(

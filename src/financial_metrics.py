@@ -53,7 +53,7 @@ ACCOUNT_MAP = {
     "무형자산": (
         ["BS"],
         [
-            "ifrs-full_IntangibleAssetsOtherThanGoodwill",
+            "ifrs-full_IntangibleAssetsAndGoodwill",
             "ifrs_IntangibleAssetsOtherThanGoodwill"
         ],
         ["무형자산"]
@@ -221,7 +221,7 @@ def calculate_metrics(fs, company, year, fs_div):
         "전기재고자산회전율(회)": safe_ratio(
             prev_cogs, prev_avg_inventory
         ),
-        "무형자산비중(%)": safe_ratio(
+        "무형자산·영업권비중(%)": safe_ratio(
             intangibles, assets, 100
         )
     }
