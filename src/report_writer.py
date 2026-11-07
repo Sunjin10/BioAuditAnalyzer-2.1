@@ -48,7 +48,8 @@ def save_company_report(
     pbc_df,
     business_model,
     output_path,
-    receipt_no=None
+    receipt_no=None,
+    metric_details=None
 ):
     """기업별 재무·감사 분석 결과를 Markdown으로 저장한다."""
 
@@ -75,9 +76,17 @@ def save_company_report(
         if col not in metadata
     ]
 
+    metric_columns = ["지표", "값"]
+    if metric_details is not None:
+        for item in metric_rows:
+            item["계산 근거·불가 이유"] = metric_details.get(
+                item["지표"], "계산 근거 미제공"
+            )
+        metric_columns.append("계산 근거·불가 이유")
+
     metric_table = markdown_table(
         pd.DataFrame(metric_rows),
-        ["지표", "값"]
+        metric_columns
     )
 
     focus_table = markdown_table(

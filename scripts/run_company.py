@@ -25,7 +25,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="BioAuditAnalyzer 2.1 기업별 공시 조회"
     )
@@ -50,7 +50,7 @@ def main():
     help="제약·바이오 사업모델"
     )
     
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # 인증키는 코드에 저장하지 않음
     api_key = getpass("OpenDART API 키 입력: ")
@@ -104,11 +104,12 @@ def main():
     )
 
     # 기업별 재무비율 자동 계산
-    metrics_df = calculate_metrics(
+    metrics_df, metric_details = calculate_metrics(
         fs,
         company["corp_name"],
         args.year,
-        fs_div
+        fs_div,
+        with_details=True
     )
 
     # 사업모델별 검토항목 생성
@@ -224,7 +225,8 @@ def main():
         pbc_df=biotech_pbc_df,
         business_model=args.model,
         output_path=report_path,
-        receipt_no=receipt_no
+        receipt_no=receipt_no,
+        metric_details=metric_details
     )
 
     print("\n기업별 분석 보고서 저장 완료:", report_path)
@@ -259,7 +261,9 @@ def main():
         "frmtrm_amount"
     ]
 
-    print(fs[columns].head(10).to_string(index=False))
+    print(fs.reindex(columns=columns).head(10).to_string(index=False))
+
+    return company["corp_name"], output_path
 
 
 if __name__ == "__main__":

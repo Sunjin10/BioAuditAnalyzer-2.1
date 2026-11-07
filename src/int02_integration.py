@@ -47,24 +47,21 @@ def merge_int02(
     company,
     year,
     business_model="unknown",
-    output_dir="outputs"
+    output_dir="outputs",
+    *,
+    screen_path=None
 ):
-    output_dir = Path(output_dir)
-
-    # 1. INT-02 분석 결과 파일 찾기
-    screen_files = list(
-        output_dir.glob(
-            f"{company}_{year}_*_intangible_screen.csv"
+    if screen_path is None:
+        screen_files = list(
+            Path(output_dir).glob(f"{company}_{year}_*_intangible_screen.csv")
         )
-    )
+        if len(screen_files) != 1:
+            raise ValueError(
+                f"{company}: INT-02 분석 파일 {len(screen_files)}개 발견"
+            )
+        screen_path = screen_files[0]
 
-    if len(screen_files) != 1:
-        raise ValueError(
-            f"{company}: INT-02 분석 파일 "
-            f"{len(screen_files)}개 발견"
-        )
-
-    screen_path = screen_files[0]
+    output_dir = screen_path.parent
 
     prefix = screen_path.name[
         :-len("_intangible_screen.csv")

@@ -98,7 +98,7 @@ def get_amount(fs, account, period):
             )
 
         if len(rows) == 1:
-            return parse_amount(rows.iloc[0][period])
+            return parse_amount(rows.iloc[0].get(period))
 
     return None
 
@@ -140,8 +140,28 @@ def average_inventory(first, last):
     return (first + last) / 2
 
 
-def calculate_metrics(fs, company, year, fs_div):
-    """기업별 재무지표를 자동 계산한다."""
+def describe_calculation(inputs, expression, *, denominator=None,
+                         nonnegative=()):
+    """계산에 사용한 원 단위 금액이나 계산을 막은 이유를 표시한다."""
+    missing = [name for name, value in inputs.items() if value is None]
+    if missing:
+        return " · ".join(missing) + " 금액 없음"
+
+    invalid = [name for name in nonnegative if inputs[name] < 0]
+    if invalid:
+        return " · ".join(invalid) + " 금액이 음수여서 원문 확인 필요"
+
+    if denominator is not None:
+        name, value = denominator
+        if value <= 0:
+            return f"{name} 금액이 0 이하"
+
+    amounts = {name: f"{value:,}원" for name, value in inputs.items()}
+    return expression.format_map(amounts)
+
+
+def calculate_metrics(fs, company, year, fs_div, *, with_details=False):
+    """재무지표를 계산하고 요청 시 지표별 계산 설명을 함께 반환한다."""
 
     # 금액 단위 확인
     if "currency" in fs.columns:
@@ -226,4 +246,58 @@ def calculate_metrics(fs, company, year, fs_div):
         )
     }
 
-    return pd.DataFrame([metrics])
+    metrics_df = pd.DataFrame([metrics])
+    if not with_details:
+        return metrics_df
+
+    # 값 계산과 동일한 원본 금액을 사용한다. 반올림한 보고서 값은 재사용하지 않는다.
+    details = {
+        "매출액(억 원)": describe_calculation(
+            {"당기 매출액": revenue}, "{당기 매출액} ÷ 100,000,000"),
+        "영업이익(억 원)": describe_calculation(
+            {"당기 영업이익": operating_profit},
+            "{당기 영업이익} ÷ 100,000,000"),
+        "매출증가율(%)": describe_calculation(
+            {"당기 매출액": revenue, "전기 매출액": prev_revenue},
+            "({당기 매출액} ÷ {전기 매출액} − 1) × 100",
+            denominator=("전기 매출액", prev_revenue)),
+        "영업이익률(%)": describe_calculation(
+            {"당기 영업이익": operating_profit, "당기 매출액": revenue},
+            "{당기 영업이익} ÷ {당기 매출액} × 100",
+            denominator=("당기 매출액", revenue)),
+        "매출원가율(%)": describe_calculation(
+            {"당기 매출원가": cogs, "당기 매출액": revenue},
+            "{당기 매출원가} ÷ {당기 매출액} × 100",
+            denominator=("당기 매출액", revenue)),
+        "부채비율(%)": describe_calculation(
+            {"당기 부채총계": liabilities, "당기 자본총계": equity},
+            "{당기 부채총계} ÷ {당기 자본총계} × 100",
+            denominator=("당기 자본총계", equity)),
+        "유동비율(%)": describe_calculation(
+            {"당기 유동자산": current_assets,
+             "당기 유동부채": current_liabilities},
+            "{당기 유동자산} ÷ {당기 유동부채} × 100",
+            denominator=("당기 유동부채", current_liabilities)),
+        "재고증가율(%)": describe_calculation(
+            {"당기 재고자산": inventory, "전기 재고자산": prev_inventory},
+            "({당기 재고자산} ÷ {전기 재고자산} − 1) × 100",
+            denominator=("전기 재고자산", prev_inventory)),
+        "재고자산회전율(회)": describe_calculation(
+            {"당기 매출원가": cogs, "전기 재고자산": prev_inventory,
+             "당기 재고자산": inventory},
+            "{당기 매출원가} ÷ (({전기 재고자산} + {당기 재고자산}) ÷ 2)",
+            denominator=("평균 재고자산", avg_inventory),
+            nonnegative=("전기 재고자산", "당기 재고자산")),
+        "전기재고자산회전율(회)": describe_calculation(
+            {"전기 매출원가": prev_cogs, "전전기 재고자산": old_inventory,
+             "전기 재고자산": prev_inventory},
+            "{전기 매출원가} ÷ (({전전기 재고자산} + {전기 재고자산}) ÷ 2)",
+            denominator=("전기 평균 재고자산", prev_avg_inventory),
+            nonnegative=("전전기 재고자산", "전기 재고자산")),
+        "무형자산·영업권비중(%)": describe_calculation(
+            {"당기 무형자산 집계액": intangibles, "당기 자산총계": assets},
+            "{당기 무형자산 집계액} ÷ {당기 자산총계} × 100",
+            denominator=("당기 자산총계", assets))
+    }
+
+    return metrics_df, details

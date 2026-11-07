@@ -42,21 +42,17 @@ def update_report(report_path, section):
     report_path.write_text(updated, encoding="utf-8")
 
 
-def process_company(company, year):
-    output_dir = Path("outputs")
-    report_dir = Path("reports")
+def process_company(company, year, *, raw_path=None):
+    if raw_path is None:
+        files = list(Path("outputs").glob(f"{company}_{year}_*_raw.csv"))
+        if len(files) != 1:
+            raise ValueError(f"{company}: 원본 CSV {len(files)}개 발견")
+        raw_path = files[0]
 
-    files = list(
-        output_dir.glob(f"{company}_{year}_*_raw.csv")
-    )
-
-    if len(files) != 1:
-        raise ValueError(
-            f"{company}: 원본 CSV {len(files)}개 발견"
-        )
-
-    raw_path = files[0]
-    fs_div = raw_path.stem.split("_")[-2]
+    output_dir = raw_path.parent
+    report_dir = output_dir.parent / "reports"
+    prefix = raw_path.stem.removesuffix("_raw")
+    fs_div = prefix.rsplit("_", 1)[-1]
 
     raw = pd.read_csv(
         raw_path,
@@ -68,7 +64,7 @@ def process_company(company, year):
 
     # 기존 프로그램의 저장 비율과 교차 검증
     metrics_path = output_dir / (
-        f"{company}_{year}_{fs_div}_metrics.csv"
+        f"{prefix}_metrics.csv"
     )
 
     metrics = pd.read_csv(
@@ -110,10 +106,10 @@ def process_company(company, year):
         ),
     }])
 
-    prefix = f"{company}_{year}_{fs_div}"
+    screen_path = output_dir / f"{prefix}_intangible_screen.csv"
 
     screen.to_csv(
-        output_dir / f"{prefix}_intangible_screen.csv",
+        screen_path,
         index=False,
         encoding="utf-8-sig"
     )
@@ -208,6 +204,8 @@ def process_company(company, year):
         f"INT-02="
         f"{'발생' if result['int02'] else '미발생'}"
     )
+
+    return screen_path
 
 
 def main():
